@@ -1,5 +1,4 @@
 # Maven
-target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -30,5 +29,4 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Local Claude Desktop config (contains machine-specific paths)
-src/main/resources/claude_desktop_config.json
+
