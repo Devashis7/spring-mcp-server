@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  logback-spring.xml
+  ==================
+  CRITICAL for MCP STDIO transport:
+  Claude Desktop treats everything written to stdout as a JSON-RPC message.
+  Therefore ALL Spring Boot and application logging MUST go to a file or to
+  stderr, never to stdout.
+
+  This configuration:
+    •  Sends all log output to a rolling file under logs/spring-mcp-server.log
+    •  Writes WARN and above to stderr (visible in process supervision tools)
+    •  Completely suppresses stdout logging
+-->
+<configuration>
+
+    <!-- =====================================================================
+         Log file location
+         Can be overridden with -Dlogging.file.path=<dir>
+         ===================================================================== -->
+    <property name="LOG_DIR"  value="${user.home}/.spring-mcp-server/logs" />
+    <property name="LOG_FILE" value="${LOG_DIR}/spring-mcp-server" />
+
+    <!-- =====================================================================
+         FILE appender  –  rolling, 30-day / 100 MB retention
+         ===================================================================== -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE}.log</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{40} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_FILE}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+
+    <!-- =====================================================================
+         STDERR appender  –  WARN+ only (for process monitoring / journalctl)
+         ===================================================================== -->
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{30} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- =====================================================================
+         Package-level tuning
+         ===================================================================== -->
+
+    <!-- Our own code: DEBUG in file, promote to INFO on stderr -->
+    <logger name="com.mindx360.mcp" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDERR" />
+    </logger>
+
+    <!-- Hibernate SQL: off unless you need to debug queries -->
+    <logger name="org.hibernate.SQL"                            level="WARN" />
+    <logger name="org.hibernate.type.descriptor.sql"            level="WARN" />
+
+    <!-- Spring framework: INFO to file, WARN to stderr -->
+    <logger name="org.springframework" level="INFO" additivity="false">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDERR" />
+    </logger>
+
+    <!-- H2 + Tomcat: suppress noisy startup lines -->
+    <logger name="com.zaxxer.hikari"             level="WARN" />
+    <logger name="org.apache.catalina"           level="WARN" />
+    <logger name="org.apache.tomcat"             level="WARN" />
+
+    <!-- =====================================================================
+         Root logger  –  everything else goes to FILE only
+         ===================================================================== -->
+    <root level="INFO">
+        <appender-ref ref="FILE" />
+        <appender-ref ref="STDERR" />
+    </root>
+
+</configuration>
